@@ -1,3 +1,6 @@
+#ifndef __BME280_I2C_H__
+#define __BME280_I2C_H__
+
 #include <stdint.h>
 #include "i2c_access.h"
 
@@ -42,3 +45,5 @@ public:
     double getHumidity(void);
     double getPressure(void);
 };
+
+#endif  // __BME280_I2C_H__

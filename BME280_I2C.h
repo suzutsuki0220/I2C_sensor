@@ -3,10 +3,12 @@
 
 #include <stdint.h>
 #include "i2c_access.h"
+#include "spi_access.h"
 
 class BME280_I2C {
 private:
     i2c_access *i2c;
+    //spi_access *i2c;
 
     /* calibration data */
     uint16_t dig_T1;

@@ -50,8 +50,10 @@ BME280_I2C::~BME280_I2C()
 void BME280_I2C::init(const unsigned int slot, const unsigned int chipaddr)
 {
     try {
-        i2c = new i2c_access();
+        i2c = new i2c_access(10);
         i2c->init(slot, chipaddr);
+//        i2c = new spi_access();
+//        i2c->init("/dev/spidev0.0", 3, 100000, 8);
     } catch(...) {
         throw;
     }
@@ -60,17 +62,22 @@ void BME280_I2C::init(const unsigned int slot, const unsigned int chipaddr)
     getCalibration();
 }
 
+#include <stdio.h>
 void BME280_I2C::setup()
 {
     int ret;
 
     ret = i2c->read(0xf2);
-    if (ret != 0x01) {
-        i2c->write(0xf2, 0x01);
+    if (ret != 0x03) {
+        i2c->write(0xf2, 0x03);
     }
     ret = i2c->read(0xf4);
-    if (ret != 0x27) {
-        i2c->write(0xf4, 0x27);
+    if (ret != 0x6f) {
+        i2c->write(0xf4, 0x6f);
+    }
+    ret = i2c->read(0xf5);
+    if (ret != 0xa4) {
+        i2c->write(0xf5, 0xa4);
     }
 }
 

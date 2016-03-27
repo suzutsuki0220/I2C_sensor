@@ -1,7 +1,7 @@
 debug=1
 
 TARGET=get_sensor
-OBJECTS=i2c_access.o BME280_I2C.o
+OBJECTS=i2c_access.o spi_access.o BME280_I2C.o
 CPP=g++
 LIBS=
 

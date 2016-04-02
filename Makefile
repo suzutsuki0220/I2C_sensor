@@ -1,7 +1,7 @@
 debug=1
 
 TARGET=get_sensor
-OBJECTS=i2c_access.o spi_access.o BME280_I2C.o
+OBJECTS=i2c_access.o spi_access.o BME280_I2C.o BME280_config.o
 CPP=g++
 LIBS=
 
@@ -15,7 +15,7 @@ endif
 
 all: $(TARGET)
 
-%.o: %.c %.h
+%.o: %.cpp %.h
 	$(CPP) $(CPPFLAGS) -o $@ -c $<
 
 $(TARGET): $(OBJECTS) main.cpp

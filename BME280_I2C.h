@@ -5,6 +5,14 @@
 #include "i2c_access.h"
 #include "spi_access.h"
 
+#include "BME280_config.h"
+
+typedef enum {
+    BME280_MODE_SLEEP,
+    BME280_MODE_FORCED,
+    BME280_MODE_NORMAL,
+} sensor_mode_t;
+
 class BME280_I2C {
 private:
     i2c_access *i2c;
@@ -38,11 +46,15 @@ private:
     void getCalibration(void);
     void setup(void);
 
+    config_t sensor_conf;
+    bool forcemode_wait_sleep;
+
 public:
     BME280_I2C();
     ~BME280_I2C();
 
     void init(const unsigned int slot, const unsigned int chipaddr);
+    sensor_mode_t getSensorMode(void);
     double getTemperature(void);
     double getHumidity(void);
     double getPressure(void);

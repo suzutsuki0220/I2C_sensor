@@ -26,8 +26,13 @@
  */
 
 #include <string>
+#include <unistd.h>  /* usleep */
 
 #include "BME280_I2C.h"
+
+#define CONFIG_REG_ADDR    0xf5
+#define CTRL_MEAS_REG_ADDR 0xf4
+#define CTRL_HUM_REG_ADDR  0xf2
 
 /*** Calibration codes ***/
 signed long int calibration_T(signed long int adc_T);
@@ -38,6 +43,7 @@ unsigned long int calibration_H(signed long int adc_H);
 BME280_I2C::BME280_I2C()
 {
     i2c = NULL;
+    forcemode_wait_sleep = true;
 }
 
 BME280_I2C::~BME280_I2C()
@@ -47,7 +53,8 @@ BME280_I2C::~BME280_I2C()
     }
 }
 
-void BME280_I2C::init(const unsigned int slot, const unsigned int chipaddr)
+void
+BME280_I2C::init(const unsigned int slot, const unsigned int chipaddr)
 {
     try {
         i2c = new i2c_access(10);
@@ -58,30 +65,48 @@ void BME280_I2C::init(const unsigned int slot, const unsigned int chipaddr)
         throw;
     }
 
+    init_config(&sensor_conf);
+
+    sensor_conf.mode = 1;
+    sensor_conf.standby_time = 5;
+    sensor_conf.filter_coefficient = 0;
+    sensor_conf.temp_oversample  = 3;
+    sensor_conf.hum_oversample   = 3;
+    sensor_conf.press_oversample = 3;
+    sensor_conf.spi_3wire = 1;
+
     setup();
     getCalibration();
 }
 
-#include <stdio.h>
-void BME280_I2C::setup()
+void
+BME280_I2C::setup()
 {
     int ret;
+    uint8_t config_reg;
+    uint8_t ctrl_meas_reg;
+    uint8_t ctrl_hum;
 
-    ret = i2c->read(0xf2);
-    if (ret != 0x03) {
-        i2c->write(0xf2, 0x03);
+    config_reg = calc_config_register(&sensor_conf);
+    ctrl_meas_reg = calc_ctrl_meas_register(&sensor_conf);
+    ctrl_hum  = calc_ctrl_hum_register(&sensor_conf);
+
+    ret = i2c->read(CTRL_HUM_REG_ADDR);
+    if (ret != ctrl_hum) {
+        i2c->write(CTRL_HUM_REG_ADDR, ctrl_hum);
     }
-    ret = i2c->read(0xf4);
-    if (ret != 0x6f) {
-        i2c->write(0xf4, 0x6f);
+    ret = i2c->read(CTRL_MEAS_REG_ADDR);
+    if (ret != ctrl_meas_reg) {
+        i2c->write(CTRL_MEAS_REG_ADDR, ctrl_meas_reg);
     }
-    ret = i2c->read(0xf5);
-    if (ret != 0xa4) {
-        i2c->write(0xf5, 0xa4);
+    ret = i2c->read(CONFIG_REG_ADDR);
+    if (ret != config_reg) {
+        i2c->write(CONFIG_REG_ADDR, config_reg);
     }
 }
 
-void BME280_I2C::getCalibration(void)
+void
+BME280_I2C::getCalibration(void)
 {
     uint8_t data[32] = {
         i2c->read(0x88), i2c->read(0x89), i2c->read(0x8a), i2c->read(0x8b), i2c->read(0x8c),
@@ -113,7 +138,35 @@ void BME280_I2C::getCalibration(void)
     dig_H6 = data[31];        
 }
 
-double BME280_I2C::getTemperature(void)
+sensor_mode_t
+BME280_I2C::getSensorMode(void)
+{
+    int ret;
+    std::string error_msg;
+
+    if (i2c == NULL) {
+        error_msg = "member is not initialized";
+        throw error_msg;
+    }
+
+    ret = i2c->read(CTRL_MEAS_REG_ADDR);
+
+    switch((uint8_t)ret & 0b00000011) {
+    case 0:
+        return BME280_MODE_SLEEP;
+    case 1:
+    case 2:
+        return BME280_MODE_FORCED;
+    case 3:
+        return BME280_MODE_NORMAL;
+    default:
+        error_msg = "Invalid mode value";
+        throw(error_msg);
+    }
+}
+
+double
+BME280_I2C::getTemperature(void)
 {
     std::string error_msg;
     signed long int temp_cal, temp_raw;
@@ -124,7 +177,21 @@ double BME280_I2C::getTemperature(void)
         throw error_msg;
     }
 
-    val_xlsb = i2c->read(0xfc);
+    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
+        for (int i = 0; i < 3; i++) {
+            usleep(500000);
+            if (getSensorMode() == BME280_MODE_SLEEP) {
+                forcemode_wait_sleep = false;
+                break;
+            }
+        }
+    }
+
+    if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
+        val_xlsb = 0;
+    } else {
+        val_xlsb = i2c->read(0xfc);
+    }
     val_lsb  = i2c->read(0xfb);
     val_msb  = i2c->read(0xfa);
 
@@ -134,7 +201,8 @@ double BME280_I2C::getTemperature(void)
     return (double)temp_cal / 100.0;
 }
 
-double BME280_I2C::getHumidity(void)
+double
+BME280_I2C::getHumidity(void)
 {
     std::string error_msg;
     unsigned long int hum_cal, hum_raw;
@@ -143,6 +211,16 @@ double BME280_I2C::getHumidity(void)
     if (i2c == NULL) {
         error_msg = "member is not initialized";
         throw error_msg;
+    }
+
+    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
+        for (int i = 0; i < 3; i++) {
+            usleep(500000);
+            if (getSensorMode() == BME280_MODE_SLEEP) {
+                forcemode_wait_sleep = false;
+                break;
+            }
+        }
     }
 
     val_lsb = i2c->read(0xfe);
@@ -154,7 +232,8 @@ double BME280_I2C::getHumidity(void)
     return (double)hum_cal / 1024.0;
 }
 
-double BME280_I2C::getPressure(void)
+double
+BME280_I2C::getPressure(void)
 {
     std::string error_msg;
     unsigned long int press_cal, press_raw;
@@ -165,7 +244,21 @@ double BME280_I2C::getPressure(void)
         throw error_msg;
     }
 
-    val_xlsb = i2c->read(0xf9);
+    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
+        for (int i = 0; i < 3; i++) {
+            usleep(500000);
+            if (getSensorMode() == BME280_MODE_SLEEP) {
+                forcemode_wait_sleep = false;
+                break;
+            }
+        }
+    }
+
+    if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
+        val_xlsb = 0;
+    } else {
+        val_xlsb = i2c->read(0xf9);
+    }
     val_lsb  = i2c->read(0xf8);
     val_msb  = i2c->read(0xf7);
 
@@ -175,7 +268,8 @@ double BME280_I2C::getPressure(void)
     return (double)press_cal / 100.0;
 }
 
-signed long int BME280_I2C::calibration_T(signed long int adc_T)
+signed long int
+BME280_I2C::calibration_T(signed long int adc_T)
 {
     signed long int var1, var2, T;
     var1 = ((((adc_T >> 3) - ((signed long int)dig_T1<<1))) * ((signed long int)dig_T2)) >> 11;
@@ -186,7 +280,8 @@ signed long int BME280_I2C::calibration_T(signed long int adc_T)
     return T; 
 }
 
-unsigned long int BME280_I2C::calibration_P(signed long int adc_P)
+unsigned long int
+BME280_I2C::calibration_P(signed long int adc_P)
 {
     signed long int var1, var2;
     unsigned long int P;
@@ -215,7 +310,8 @@ unsigned long int BME280_I2C::calibration_P(signed long int adc_P)
     return P;
 }
 
-unsigned long int BME280_I2C::calibration_H(signed long int adc_H)
+unsigned long int
+BME280_I2C::calibration_H(signed long int adc_H)
 {
     signed long int v_x1;
     

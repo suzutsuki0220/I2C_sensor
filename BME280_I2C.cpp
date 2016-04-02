@@ -92,15 +92,15 @@ BME280_I2C::setup()
     ctrl_hum  = calc_ctrl_hum_register(&sensor_conf);
 
     ret = i2c->read(CTRL_HUM_REG_ADDR);
-    if (ret != ctrl_hum) {
+    if ((uint8_t)ret != ctrl_hum) {
         i2c->write(CTRL_HUM_REG_ADDR, ctrl_hum);
     }
     ret = i2c->read(CTRL_MEAS_REG_ADDR);
-    if (ret != ctrl_meas_reg) {
+    if ((uint8_t)ret != ctrl_meas_reg) {
         i2c->write(CTRL_MEAS_REG_ADDR, ctrl_meas_reg);
     }
     ret = i2c->read(CONFIG_REG_ADDR);
-    if (ret != config_reg) {
+    if ((uint8_t)ret != config_reg) {
         i2c->write(CONFIG_REG_ADDR, config_reg);
     }
 }
@@ -109,13 +109,18 @@ void
 BME280_I2C::getCalibration(void)
 {
     uint8_t data[32] = {
-        i2c->read(0x88), i2c->read(0x89), i2c->read(0x8a), i2c->read(0x8b), i2c->read(0x8c),
-        i2c->read(0x8d), i2c->read(0x8e), i2c->read(0x8f), i2c->read(0x90), i2c->read(0x91),
-        i2c->read(0x92), i2c->read(0x93), i2c->read(0x94), i2c->read(0x95), i2c->read(0x96),
-        i2c->read(0x97), i2c->read(0x98), i2c->read(0x99), i2c->read(0x9a), i2c->read(0x9b),
-        i2c->read(0x9c), i2c->read(0x9d), i2c->read(0x9e), i2c->read(0x9f), i2c->read(0xa1),  /* skip a0 */
-        i2c->read(0xe1), i2c->read(0xe2), i2c->read(0xe3), i2c->read(0xe4), i2c->read(0xe5),
-        i2c->read(0xe6), i2c->read(0xe7)
+        (uint8_t)i2c->read(0x88), (uint8_t)i2c->read(0x89), (uint8_t)i2c->read(0x8a),
+        (uint8_t)i2c->read(0x8b), (uint8_t)i2c->read(0x8c), (uint8_t)i2c->read(0x8d),
+        (uint8_t)i2c->read(0x8e), (uint8_t)i2c->read(0x8f), (uint8_t)i2c->read(0x90),
+        (uint8_t)i2c->read(0x91), (uint8_t)i2c->read(0x92), (uint8_t)i2c->read(0x93),
+        (uint8_t)i2c->read(0x94), (uint8_t)i2c->read(0x95), (uint8_t)i2c->read(0x96),
+        (uint8_t)i2c->read(0x97), (uint8_t)i2c->read(0x98), (uint8_t)i2c->read(0x99),
+        (uint8_t)i2c->read(0x9a), (uint8_t)i2c->read(0x9b), (uint8_t)i2c->read(0x9c),
+        (uint8_t)i2c->read(0x9d), (uint8_t)i2c->read(0x9e), (uint8_t)i2c->read(0x9f),
+        (uint8_t)i2c->read(0xa1),  /* skip a0 */
+        (uint8_t)i2c->read(0xe1), (uint8_t)i2c->read(0xe2), (uint8_t)i2c->read(0xe3),
+        (uint8_t)i2c->read(0xe4), (uint8_t)i2c->read(0xe5), (uint8_t)i2c->read(0xe6),
+        (uint8_t)i2c->read(0xe7)
     };
 
     dig_T1 = (data[1] << 8) | data[0];
@@ -190,10 +195,10 @@ BME280_I2C::getTemperature(void)
     if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
         val_xlsb = 0;
     } else {
-        val_xlsb = i2c->read(0xfc);
+        val_xlsb = (uint8_t)i2c->read(0xfc);
     }
-    val_lsb  = i2c->read(0xfb);
-    val_msb  = i2c->read(0xfa);
+    val_lsb  = (uint8_t)i2c->read(0xfb);
+    val_msb  = (uint8_t)i2c->read(0xfa);
 
     temp_raw = (val_msb << 12) | (val_lsb << 4) | (val_xlsb >> 4);
     temp_cal = calibration_T(temp_raw);
@@ -223,8 +228,8 @@ BME280_I2C::getHumidity(void)
         }
     }
 
-    val_lsb = i2c->read(0xfe);
-    val_msb = i2c->read(0xfd);
+    val_lsb = (uint8_t)i2c->read(0xfe);
+    val_msb = (uint8_t)i2c->read(0xfd);
 
     hum_raw = (val_msb << 8) | val_lsb;
     hum_cal = calibration_H(hum_raw);
@@ -257,10 +262,10 @@ BME280_I2C::getPressure(void)
     if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
         val_xlsb = 0;
     } else {
-        val_xlsb = i2c->read(0xf9);
+        val_xlsb = (uint8_t)i2c->read(0xf9);
     }
-    val_lsb  = i2c->read(0xf8);
-    val_msb  = i2c->read(0xf7);
+    val_lsb  = (uint8_t)i2c->read(0xf8);
+    val_msb  = (uint8_t)i2c->read(0xf7);
 
     press_raw = (val_msb << 12) | (val_lsb << 4) | (val_xlsb >> 4);
     press_cal = calibration_P(press_raw);

@@ -1,0 +1,66 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript" src="ccchart-min.js" charset="utf-8"></script>
+<script type="text/javascript" src="graph_defs.js" charset="utf-8"></script>
+<script type="text/javascript" src="ajax_html_request.js" charset="utf-8"></script>
+<script type="text/javascript">
+<!--
+    function get_sensor()
+    {
+        var httpRequest = ajax_init();
+	if (!httpRequest) {
+	    alert("中断 :( XMLHTTPインスタンスを生成できませんでした");
+	    return false;
+	}
+	ajax_set_instance(httpRequest, function() { print_sensor(httpRequest); });
+        ajax_get(httpRequest, "cgi-bin/get_sensor");
+    }
+
+    function print_sensor(httpRequest)
+    {
+	try {
+	    if (httpRequest.readyState == 0 || httpRequest.readyState == 1 || httpRequest.readyState == 2) {
+		document.getElementById('sStatus').innerHTML = "読み込み中...";
+	    } else if (httpRequest.readyState == 4) {
+		if (httpRequest.status == 200) {
+		    document.getElementById('sStatus').innerHTML = "";
+		    var xmldoc = httpRequest.responseXML;
+		    var temperature = xmldoc.getElementsByTagName('temperature').item(0).firstChild.data;
+		    var humidity = xmldoc.getElementsByTagName('humidity').item(0).firstChild.data;
+		    var pressure = xmldoc.getElementsByTagName('pressure').item(0).firstChild.data;
+                    //document.getElementById('sValue').innerHTML = httpRequest.responseText;
+		    document.getElementById('sValue').innerHTML = "<table border=\"1\"><tr><th>気温</th><td>" + temperature + "℃</td></tr><tr><th>湿度</th><td>" + humidity + "％</td></tr><tr><th>気圧</th><td>" + pressure + "hPa</td></tr></table>";
+		} else {
+		    document.getElementById('sStatus').innerHTML = "ERROR: " + httpRequest.status;
+                }
+	    }
+	} catch(e) {
+	    alert("ERROR: " + e.description);
+	}
+    }
+-->
+</script>
+<title>温湿度気圧モニター</title>
+</head>
+<body>
+<h1>温湿度気圧モニター</h1>
+<form name="f1" action="#" method="GET">
+    現在の値<br>
+    <input type="button" name="btn_get_sensor" onClick="get_sensor()" value="再取得">
+</form>
+<div id="sStatus"></div>
+<div id="sValue"></div>
+
+<canvas id="c_temperature"></canvas>
+<canvas id="c_humidity"></canvas>
+<canvas id="c_pressure"></canvas>
+<script type="text/javascript">
+<!--
+ccchart.init("c_temperature", data_temperature);
+ccchart.init("c_humidity", data_humidity);
+ccchart.init("c_pressure", data_pressure);
+-->
+</script>
+</body>
+</html>

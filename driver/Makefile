@@ -1,6 +1,6 @@
 debug=1
 
-TARGET=get_sensor
+TARGET_STATIC=bme280_i2c.a
 OBJECTS=i2c_access.o spi_access.o BME280_I2C.o BME280_config.o
 CPP=g++
 LIBS=
@@ -13,13 +13,16 @@ endif
 
 .PHONY: all clean
 
-all: $(TARGET)
+all: $(TARGET_STATIC)
 
 %.o: %.cpp %.h
 	$(CPP) $(CPPFLAGS) -o $@ -c $<
+
+$(TARGET_STATIC): $(OBJECTS)
+	ar rv $@ $^
 
 $(TARGET): $(OBJECTS) main.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LIBS)
 
 clean:
-	rm -f $(TARGET) $(OBJECTS) *~
+	rm -f $(TARGET) $(TARGET_STATIC) $(OBJECTS) *~

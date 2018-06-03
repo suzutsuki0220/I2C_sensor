@@ -4,21 +4,21 @@
 #include <cstdio>
 #include <string>
 
-#include "BME280_I2C.h"
+#include "environment_driver.h"
 
 void cgi_header(void);
 
 int main(int argc, char *argv[])
 {
-    BME280_I2C sensor;
+    environment_driver sensor;
 
     double humidity    = 0;
     double temperature = 0;
     double pressure    = 0;
 
     try {
-        sensor = BME280_I2C();
-        sensor.init(I2CBUS, SENSOR_ADDR);
+        sensor = environment_driver();
+        sensor.init();
 
         temperature = sensor.getTemperature();
         humidity = sensor.getHumidity();

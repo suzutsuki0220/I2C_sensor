@@ -4,7 +4,7 @@ TARGET=get_sensor
 OBJECTS=
 
 DRIVER_DIR=../driver
-STATIC_DRIVER=$(DRIVER_DIR)/bme280_i2c.a
+STATIC_DRIVER=$(DRIVER_DIR)/environment_driver.a
 CPP=g++
 LIBS=
 
@@ -20,7 +20,7 @@ CPPFLAGS+= -I$(DRIVER_DIR)/
 all: $(TARGET)
 
 $(STATIC_DRIVER):
-	make -C ../driver
+	make -C $(DRIVER_DIR)
 
 %.o: %.cpp %.h
 	$(CPP) $(CPPFLAGS) -o $@ -c $<

@@ -2,6 +2,11 @@
 
 PREFIX=/srv/environment
 
+BIN_DIR=$(PREFIX)/bin
+HTDOCS_DIR=$(PREFIX)/htdocs
+CGIBIN_DIR=$(PREFIX)/cgi-bin
+LOG_DIR=$(HTDOCS_DIR)/log
+
 all:
 	make -C driver/
 	make -C get_sensor/
@@ -13,7 +18,9 @@ clean:
 	make clean -C environment_daemon/
 
 install:
-	cp get_sensor/get_sensor ${PREFIX}/cgi-bin
-	cp environment_daemon/environment_daemon ${PREFIX}/bin
-	cp -a htdocs/* ${PREFIX}/htdocs
+	mkdir -p $(PREFIX) $(BIN_DIR) $(HTDOCS_DIR) $(CGIBIN_DIR) $(LOG_DIR)
+	chmod 1777 $(LOG_DIR)
+	cp get_sensor/get_sensor $(CGIBIN_DIR)
+	cp environment_daemon/environment_daemon $(BIN_DIR)
+	cp -a htdocs/* $(HTDOCS_DIR)
 

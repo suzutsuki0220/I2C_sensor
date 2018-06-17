@@ -1,3 +1,6 @@
+#ifndef __I2C_ACCESS_H__
+#define __I2C_ACCESS_H__
+
 #include <cerrno>
 
 class i2c_access {
@@ -14,3 +17,5 @@ public:
     void write(const unsigned int data_addr, const unsigned char value);
     void write(const unsigned int data_addr, const unsigned char *values, size_t length);
 };
+
+#endif  // __I2C_ACCESS_H__

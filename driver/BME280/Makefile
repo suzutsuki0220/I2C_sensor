@@ -1,7 +1,7 @@
 debug=1
 
 TARGET_STATIC=bme280_i2c.a
-OBJECTS=BME280_I2C.o BME280_config.o
+OBJECTS=BME280_sensor.o BME280_calibration.o BME280_config.o environment_sensor.o
 
 INTERFACE_DIR=../interface
 I2C_ACCESSOR=$(INTERFACE_DIR)/interface.a

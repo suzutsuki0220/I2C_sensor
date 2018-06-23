@@ -18,17 +18,18 @@ class BME280_SENSOR {
 private:
     i2c_access *i2c;
     //spi_access *i2c;
+    config_t *sensor_conf;
 
-    void setup(void);
+    void waitForSleepOnForcedmode(void);
     calibration_t calibration;
-    config_t sensor_conf;
-    bool forcemode_wait_sleep;
 
 public:
-    BME280_SENSOR();
+    BME280_SENSOR(config_t *conf);
     ~BME280_SENSOR();
 
-    void init(const unsigned int slot, const unsigned int chipaddr);
+    void connect(const unsigned int slot, const unsigned int chipaddr);
+    void setup(void);
+    void resetSensor(void);
     sensor_mode_t getSensorMode(void);
     double getTemperature(void);
     double getHumidity(void);

@@ -30,14 +30,15 @@
 
 #include "BME280_sensor.h"
 
+#define RESET_REG_ADDR     0xe0
 #define CONFIG_REG_ADDR    0xf5
 #define CTRL_MEAS_REG_ADDR 0xf4
 #define CTRL_HUM_REG_ADDR  0xf2
 
-BME280_SENSOR::BME280_SENSOR()
+BME280_SENSOR::BME280_SENSOR(config_t *conf)
 {
     i2c = NULL;
-    forcemode_wait_sleep = true;
+    sensor_conf = conf;
 }
 
 BME280_SENSOR::~BME280_SENSOR()
@@ -48,7 +49,7 @@ BME280_SENSOR::~BME280_SENSOR()
 }
 
 void
-BME280_SENSOR::init(const unsigned int slot, const unsigned int chipaddr)
+BME280_SENSOR::connect(const unsigned int slot, const unsigned int chipaddr)
 {
     try {
         i2c = new i2c_access(10);
@@ -58,18 +59,6 @@ BME280_SENSOR::init(const unsigned int slot, const unsigned int chipaddr)
     } catch(...) {
         throw;
     }
-
-    init_config(&sensor_conf);
-
-    sensor_conf.mode = 1;
-    sensor_conf.standby_time = 5;
-    sensor_conf.filter_coefficient = 0;
-    sensor_conf.temp_oversample  = 3;
-    sensor_conf.hum_oversample   = 3;
-    sensor_conf.press_oversample = 3;
-    sensor_conf.spi_3wire = 1;
-
-    setup();
     getCalibration(i2c, &calibration);
 }
 
@@ -79,15 +68,15 @@ BME280_SENSOR::setup()
     int ret;
     uint8_t config_reg;
     uint8_t ctrl_meas_reg;
-    uint8_t ctrl_hum;
+    uint8_t ctrl_hum_reg;
 
-    config_reg = calc_config_register(&sensor_conf);
-    ctrl_meas_reg = calc_ctrl_meas_register(&sensor_conf);
-    ctrl_hum  = calc_ctrl_hum_register(&sensor_conf);
+    config_reg = calc_config_register(sensor_conf);
+    ctrl_meas_reg = calc_ctrl_meas_register(sensor_conf);
+    ctrl_hum_reg  = calc_ctrl_hum_register(sensor_conf);
 
     ret = i2c->read(CTRL_HUM_REG_ADDR);
-    if ((uint8_t)ret != ctrl_hum) {
-        i2c->write(CTRL_HUM_REG_ADDR, ctrl_hum);
+    if ((uint8_t)ret != ctrl_hum_reg) {
+        i2c->write(CTRL_HUM_REG_ADDR, ctrl_hum_reg);
     }
     ret = i2c->read(CTRL_MEAS_REG_ADDR);
     if ((uint8_t)ret != ctrl_meas_reg) {
@@ -97,6 +86,32 @@ BME280_SENSOR::setup()
     if ((uint8_t)ret != config_reg) {
         i2c->write(CONFIG_REG_ADDR, config_reg);
     }
+}
+
+void
+BME280_SENSOR::waitForSleepOnForcedmode(void)
+{
+    if (is_force_mode(sensor_conf)) {
+        for (int i = 0; i < 3; i++) {
+            usleep(500000);
+            if (getSensorMode() == BME280_MODE_SLEEP) {
+                break;
+            }
+        }
+    }
+}
+
+void
+BME280_SENSOR::resetSensor(void)
+{
+    std::string error_msg;
+
+    if (i2c == NULL) {
+        error_msg = "member is not initialized";
+        throw error_msg;
+    }
+
+    i2c->write(RESET_REG_ADDR, 0xb6);
 }
 
 sensor_mode_t
@@ -138,17 +153,9 @@ BME280_SENSOR::getTemperature(void)
         throw error_msg;
     }
 
-    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
-        for (int i = 0; i < 3; i++) {
-            usleep(500000);
-            if (getSensorMode() == BME280_MODE_SLEEP) {
-                forcemode_wait_sleep = false;
-                break;
-            }
-        }
-    }
+    waitForSleepOnForcedmode();
 
-    if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
+    if (sensor_conf->filter_coefficient == FILTER_COEFFICIENT_OFF) {
         val_xlsb = 0;
     } else {
         val_xlsb = (uint8_t)i2c->read(0xfc);
@@ -174,15 +181,7 @@ BME280_SENSOR::getHumidity(void)
         throw error_msg;
     }
 
-    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
-        for (int i = 0; i < 3; i++) {
-            usleep(500000);
-            if (getSensorMode() == BME280_MODE_SLEEP) {
-                forcemode_wait_sleep = false;
-                break;
-            }
-        }
-    }
+    waitForSleepOnForcedmode();
 
     val_lsb = (uint8_t)i2c->read(0xfe);
     val_msb = (uint8_t)i2c->read(0xfd);
@@ -205,17 +204,9 @@ BME280_SENSOR::getPressure(void)
         throw error_msg;
     }
 
-    if (forcemode_wait_sleep && is_force_mode(&sensor_conf)) {
-        for (int i = 0; i < 3; i++) {
-            usleep(500000);
-            if (getSensorMode() == BME280_MODE_SLEEP) {
-                forcemode_wait_sleep = false;
-                break;
-            }
-        }
-    }
+    waitForSleepOnForcedmode();
 
-    if (sensor_conf.filter_coefficient == FILTER_COEFFICIENT_OFF) {
+    if (sensor_conf->filter_coefficient == FILTER_COEFFICIENT_OFF) {
         val_xlsb = 0;
     } else {
         val_xlsb = (uint8_t)i2c->read(0xf9);

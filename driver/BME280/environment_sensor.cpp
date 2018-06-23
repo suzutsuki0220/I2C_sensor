@@ -26,34 +26,59 @@
 #include "BME280_sensor.h"
 #include "../environment_driver.h"
 
+static BME280_SENSOR *sensor;
+static config_t sensor_conf;
+
 environment_driver::environment_driver()
 {
+    sensor = NULL;
+    init_config(&sensor_conf);
 }
 
 environment_driver::~environment_driver()
 {
+    if (sensor) {
+      delete sensor;
+    }
 }
 
 void
 environment_driver::init()
 {
+    const int I2CBUS = 1;
+    const int SENSOR_ADDR = 0x76;
+
+    try {
+        sensor_conf.mode = 1;
+        sensor_conf.standby_time = 5;
+        sensor_conf.filter_coefficient = 0;
+        sensor_conf.temp_oversample  = 3;
+        sensor_conf.hum_oversample   = 3;
+        sensor_conf.press_oversample = 3;
+        sensor_conf.spi_3wire = 1;
+
+        sensor = new BME280_SENSOR(&sensor_conf);
+        sensor->connect(I2CBUS, SENSOR_ADDR);
+        sensor->setup();
+    } catch(...) {
+        throw;
+    }
 }
 
 double
 environment_driver::getTemperature(void)
 {
-    return 27.45f;
+    return sensor->getTemperature();
 }
 
 double
 environment_driver::getHumidity(void)
 {
-    return 48.29;
+    return sensor->getHumidity();
 }
 
 double
 environment_driver::getPressure(void)
 {
-    return 1014.52;
+    return sensor->getPressure();
 }
-

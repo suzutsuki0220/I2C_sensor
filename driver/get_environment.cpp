@@ -1,18 +1,15 @@
-#define I2CBUS 1
-#define SENSOR_ADDR 0x76
-
 #include <cstdio>
 #include <string>
 
-#include "BME280_I2C.h"
+#include "environment_driver.h"
 
 int main(int argc, char *argv[])
 {
-    BME280_I2C sensor;
+    environment_driver sensor;
 
     try {
-        sensor = BME280_I2C();
-        sensor.init(I2CBUS, SENSOR_ADDR);
+        sensor = environment_driver();
+        sensor.init();
 
         printf("humidity:    %f %%\n", sensor.getHumidity());
         printf("temperature: %f DegC\n", sensor.getTemperature());

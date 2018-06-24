@@ -59,7 +59,9 @@ environment_driver::init()
 
         sensor = new BME280_SENSOR(&sensor_conf);
         sensor->connect(I2CBUS, SENSOR_ADDR);
-        sensor->setup();
+        if (sensor->getSensorMode() != BME280_MODE_NORMAL) {
+            sensor->setup();
+        }
     } catch(...) {
         throw;
     }

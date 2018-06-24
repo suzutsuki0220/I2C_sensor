@@ -111,7 +111,7 @@ BME280_SENSOR::isMeasuring(void)
 void
 BME280_SENSOR::waitForSleepOnForcedmode(void)
 {
-    if (getSensorMode() == BME280_MODE_FORCED) {
+    if (getSensorMode() != BME280_MODE_NORMAL) {
         for (int i = 0; i < 3; i++) {
             usleep(500000);
             if (getSensorMode() == BME280_MODE_SLEEP) {
@@ -141,6 +141,7 @@ BME280_SENSOR::resetSensor(void)
     THROW_ERROR_IF_MEMBER_ISNOT_INIT;
 
     i2c->write(RESET_REG_ADDR, 0xb6);
+    usleep(500000);
 }
 
 sensor_mode_t

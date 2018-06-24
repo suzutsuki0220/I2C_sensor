@@ -31,6 +31,7 @@
 #include "BME280_sensor.h"
 
 #define RESET_REG_ADDR     0xe0
+#define STATUS_REG_ADDR    0xf3
 #define CONFIG_REG_ADDR    0xf5
 #define CTRL_MEAS_REG_ADDR 0xf4
 #define CTRL_HUM_REG_ADDR  0xf2
@@ -93,6 +94,18 @@ BME280_SENSOR::setup()
     if ((uint8_t)ret != config_reg) {
         i2c->write(CONFIG_REG_ADDR, config_reg);
     }
+}
+
+bool
+BME280_SENSOR::isMeasuring(void)
+{
+    int ret;
+
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
+
+    ret = i2c->read(STATUS_REG_ADDR);
+
+    return (ret & 0b00001000) ? true : false;
 }
 
 void

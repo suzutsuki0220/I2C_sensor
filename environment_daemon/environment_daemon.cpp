@@ -13,7 +13,7 @@
 #include "config.h"
 #include "file_operate.h"
 
-#include "BME280_I2C.h"
+#include "environment_driver.h"
 
 #define DEFAULT_CHECK_SPAN 900
 static int interrupt = 0;
@@ -67,8 +67,6 @@ int main(int argc, char *argv[])
 
 
     while(!interrupt) {
-        BME280_I2C sensor;
-
         double humidity    = 0;
         double temperature = 0;
         double pressure    = 0;
@@ -88,8 +86,9 @@ int main(int argc, char *argv[])
                local->tm_year + 1900, local->tm_mon + 1, local->tm_mday);
 
         try {
-            sensor = BME280_I2C();
-            sensor.init(I2CBUS, SENSOR_ADDR);
+            environment_driver sensor;
+            sensor = environment_driver();
+            sensor.init();
 
             temperature = sensor.getTemperature();
             humidity = sensor.getHumidity();
@@ -112,7 +111,7 @@ int main(int argc, char *argv[])
             filename,
             "%02d:%02d:%02d,%.2f,%.2f,%.2f\n", local->tm_hour, local->tm_min, local->tm_sec,
             temperature, humidity, pressure);
-            
+
         sleep(conf.span);
     }
 

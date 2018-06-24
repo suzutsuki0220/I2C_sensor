@@ -2,7 +2,7 @@
 #define __INCLUDE_CONFIG_H__
 
 typedef struct daemon_config {
-  char *logdir;
+  const char *logdir;
   int  span;
 } daemon_config_t;
 

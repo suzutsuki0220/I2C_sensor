@@ -4,7 +4,7 @@ TARGET=environment_daemon
 OBJECTS=config.o file_operate.o log.o
 
 DRIVER_DIR=../driver
-STATIC_DRIVER=$(DRIVER_DIR)/bme280_i2c.a
+STATIC_DRIVER=$(DRIVER_DIR)/environment_driver.a
 CPP=g++
 LIBS=
 

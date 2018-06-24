@@ -29,6 +29,7 @@ public:
 
     void connect(const unsigned int slot, const unsigned int chipaddr);
     void setup(void);
+    void setForcedmode(void);
     void resetSensor(void);
     sensor_mode_t getSensorMode(void);
     double getTemperature(void);

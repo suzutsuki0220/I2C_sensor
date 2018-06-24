@@ -35,6 +35,13 @@
 #define CTRL_MEAS_REG_ADDR 0xf4
 #define CTRL_HUM_REG_ADDR  0xf2
 
+#define THROW_ERROR_IF_MEMBER_ISNOT_INIT \
+if (i2c == NULL) { \
+    std::string _emsg; \
+    _emsg = "member is not initialized"; \
+    throw _emsg; \
+}
+
 BME280_SENSOR::BME280_SENSOR(config_t *conf)
 {
     i2c = NULL;
@@ -91,7 +98,7 @@ BME280_SENSOR::setup()
 void
 BME280_SENSOR::waitForSleepOnForcedmode(void)
 {
-    if (is_force_mode(sensor_conf)) {
+    if (getSensorMode() == BME280_MODE_FORCED) {
         for (int i = 0; i < 3; i++) {
             usleep(500000);
             if (getSensorMode() == BME280_MODE_SLEEP) {
@@ -102,14 +109,23 @@ BME280_SENSOR::waitForSleepOnForcedmode(void)
 }
 
 void
+BME280_SENSOR::setForcedmode(void)
+{
+    int get_val, set_val;
+
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
+
+    if (getSensorMode() != BME280_MODE_NORMAL) {
+        get_val = i2c->read(CTRL_MEAS_REG_ADDR);
+        set_val = (get_val & 0b11111100) | 0b00000001;
+        i2c->write(CTRL_MEAS_REG_ADDR, set_val);
+    }
+}
+
+void
 BME280_SENSOR::resetSensor(void)
 {
-    std::string error_msg;
-
-    if (i2c == NULL) {
-        error_msg = "member is not initialized";
-        throw error_msg;
-    }
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
 
     i2c->write(RESET_REG_ADDR, 0xb6);
 }
@@ -120,10 +136,7 @@ BME280_SENSOR::getSensorMode(void)
     int ret;
     std::string error_msg;
 
-    if (i2c == NULL) {
-        error_msg = "member is not initialized";
-        throw error_msg;
-    }
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
 
     ret = i2c->read(CTRL_MEAS_REG_ADDR);
 
@@ -148,11 +161,7 @@ BME280_SENSOR::getTemperature(void)
     signed long int temp_cal, temp_raw;
     uint8_t val_lsb,val_msb, val_xlsb;
 
-    if (i2c == NULL) {
-        error_msg = "member is not initialized";
-        throw error_msg;
-    }
-
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
     waitForSleepOnForcedmode();
 
     if (sensor_conf->filter_coefficient == FILTER_COEFFICIENT_OFF) {
@@ -176,11 +185,7 @@ BME280_SENSOR::getHumidity(void)
     unsigned long int hum_cal, hum_raw;
     uint8_t val_lsb,val_msb;
 
-    if (i2c == NULL) {
-        error_msg = "member is not initialized";
-        throw error_msg;
-    }
-
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
     waitForSleepOnForcedmode();
 
     val_lsb = (uint8_t)i2c->read(0xfe);
@@ -199,11 +204,7 @@ BME280_SENSOR::getPressure(void)
     unsigned long int press_cal, press_raw;
     uint8_t val_lsb,val_msb, val_xlsb;
 
-    if (i2c == NULL) {
-        error_msg = "member is not initialized";
-        throw error_msg;
-    }
-
+    THROW_ERROR_IF_MEMBER_ISNOT_INIT;
     waitForSleepOnForcedmode();
 
     if (sensor_conf->filter_coefficient == FILTER_COEFFICIENT_OFF) {

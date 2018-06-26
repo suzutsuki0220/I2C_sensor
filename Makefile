@@ -17,10 +17,17 @@ clean:
 	make clean -C driver/
 	make clean -C environment_daemon/
 
-install:
+make-directory:
 	mkdir -p $(PREFIX) $(BIN_DIR) $(HTDOCS_DIR) $(CGIBIN_DIR) $(LOG_DIR)
 	chmod 1777 $(LOG_DIR)
-	cp cgi-bin/get_sensor $(CGIBIN_DIR)
+
+install-daemon:
 	cp environment_daemon/environment_daemon $(BIN_DIR)
+
+install-cgi:
+	cp cgi-bin/get_sensor $(CGIBIN_DIR)
+
+install-htdocs:
 	cp -a htdocs/* $(HTDOCS_DIR)
 
+install: make-directory install-daemon install-cgi install-htdocs

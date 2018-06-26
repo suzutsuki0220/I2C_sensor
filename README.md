@@ -65,8 +65,7 @@ make driver=stub
 $ sudo -u apache /srv/environment/bin/environment_daemon -l /srv/environment/htdocs/log &
 ```
 
-sudo コマンドでログ保存場所に書き込めるユーザーを指定(ここではWebサーバーデーモン実行ユーザーの apache) `-l` オプションでログの書き込み先を指定してください
-デーモンのオプションは次の通りです
+sudo コマンドでログ保存場所に書き込めるユーザーを指定(ここではWebサーバーデーモン実行ユーザーの apache) `-l` オプションでログの書き込み先を指定してください。デーモンのオプションは次の通りです
 
 ```
 Usage: ./environment_daemon [OPTIONS]
@@ -76,3 +75,7 @@ OPTIONS
 ```
 
 記録頻度は `-s` オプションで指定できます。指定がなければ15分間隔で記録されます
+
+# 使用ライブラリ
+
+* ccchart : グラフの描画に使用しています

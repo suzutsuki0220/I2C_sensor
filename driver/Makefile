@@ -7,15 +7,8 @@ TARGET_STATIC=environment_driver.a
 
 INTERFACE_DIR=interface
 
-ifeq ($(driver), bme280)
-	SENSOR_DRIVER_DIR=BME280
-	SENSOR_DRIVER=$(SENSOR_DRIVER_DIR)/bme280_i2c.a
-else
-ifeq ($(driver), stub)
-	SENSOR_DRIVER_DIR=stub
-	SENSOR_DRIVER=$(SENSOR_DRIVER_DIR)/sensor_stub.a
-endif
-endif
+SENSOR_DRIVER_DIR=$(driver)
+SENSOR_DRIVER=$(SENSOR_DRIVER_DIR)/$(driver).a
 
 CPP=g++
 LIBS=

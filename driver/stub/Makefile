@@ -1,6 +1,6 @@
 debug?=0
 
-TARGET_STATIC=sensor_stub.a
+TARGET_STATIC=stub.a
 OBJECTS=sensor_stub.o
 
 CPP=g++

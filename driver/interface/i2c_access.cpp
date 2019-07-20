@@ -88,7 +88,6 @@ __s32 i2c_smbus_write_i2c_block_data(int file, __u8 command, __u8 length,
                 I2C_SMBUS_I2C_BLOCK_BROKEN, &data);
 }
 
-
 i2c_access::i2c_access(const unsigned int retry)
 {
     fd = -1;
@@ -130,7 +129,16 @@ void i2c_access::init(const unsigned int slot, const unsigned int chipaddr)
     chip_address = chipaddr;
 }
 
-int i2c_access::read(const unsigned int data_addr)
+unsigned char i2c_access::read(const unsigned int data_addr)
+{
+    unsigned char values[1] = {0};
+
+    read(data_addr, values, 1);
+
+    return values[0];
+}
+
+unsigned char i2c_access::read(const unsigned int data_addr, const unsigned char *values, size_t length)
 {
     int ret;
     std::string error_msg;
@@ -146,7 +154,7 @@ int i2c_access::read(const unsigned int data_addr)
     }
 
     for (unsigned int i=0; i<=retry_times; i++) {
-        ret = i2c_smbus_read_byte_data(fd, data_addr);
+        ret = i2c_smbus_read_i2c_block_data(fd, data_addr, (__u8)length, (__u8*)values);
         if (ret >= 0) {
             break;
         } else {
@@ -163,7 +171,7 @@ int i2c_access::read(const unsigned int data_addr)
         error_msg.append(strerror(ret * -1));
         throw error_msg;
     }
-    return ret;
+    return (unsigned char)ret;
 }
 
 void i2c_access::write(const unsigned int data_addr, const unsigned char value)
@@ -235,5 +243,3 @@ void i2c_access::write(const unsigned int data_addr, const unsigned char *values
         throw error_msg;
     }
 }
-
-

@@ -2,7 +2,7 @@
  *  AM2320 temperature humidity and pressure combined library
  *
  *  @author  suzutsuki0220
- *  @date    13-Feb-2016
+ *  @date    29-Jul-2019
  *
  *  This Library is for AOSONG AM2320 sensor module
  *
@@ -29,16 +29,26 @@
 
 #define READING_REG_FUNC      0x03
 #define WRITE_MULTI_REG_FUNC  0x10
-#define HUM_HIGH_ADDR    0x00
-#define HUM_LOW_ADDR     0x01
+#define SIZE_HUM_AND_TEMP     0x04
+#define HUM_HIGH_ADDR  0x00
 #define TEMP_HIGH_ADDR 0x02
-#define TEMP_LOW_ADDR  0x03
 
 #define THROW_ERROR_IF_MEMBER_ISNOT_INIT \
 if (i2c == NULL) { \
     std::string _emsg; \
     _emsg = "member is not initialized"; \
     throw _emsg; \
+}
+
+double
+get2block(unsigned char *block, const size_t address)
+{
+    uint8_t val_lsb, val_msb;
+
+    val_msb = (uint8_t)block[address];
+    val_lsb = (uint8_t)block[address + 1];
+
+    return (double)((val_msb << 8) | val_lsb) / 10.0;
 }
 
 void
@@ -77,66 +87,57 @@ AM2320_SENSOR::connect(const unsigned int slot, const unsigned int chipaddr)
 }
 
 void
-AM2320_SENSOR::wakeup()
+AM2320_SENSOR::wakeupSensor()
 {
     i2c->write(0x00, NULL, 0);
-}
-
-void
-AM2320_SENSOR::waitForAwake(void)
-{
-    waitMsec(3);
+    waitMsec(2);  // wait for awake 800usec - 3msec
 }
 
 void
 AM2320_SENSOR::readRequest()
 {
-    unsigned char write_value[] = {0x00, 0x04};
+    unsigned char write_value[] = {0x00, SIZE_HUM_AND_TEMP};  // start address and number of registers
 
     i2c->write(READING_REG_FUNC, write_value, sizeof(write_value) / sizeof(write_value[0]));
-    waitMsec(15);
+    waitMsec(1.5);
 }
 
 void
 AM2320_SENSOR::setup(void)
 {
-    wakeup();
-    waitForAwake();
-    readRequest();
+    wakeupSensor();
 }
 
 void
 AM2320_SENSOR::getValue(double &temperature, double &humidity)
 {
     unsigned char get_value[6];
+    unsigned char* function_code = &get_value[0];  // read, write
+    unsigned char* number = &get_value[1];  // number of register
+    unsigned char* data   = &get_value[2];  // payload
 
     THROW_ERROR_IF_MEMBER_ISNOT_INIT;
     setup();
 
+    readRequest();
     i2c->read(0x00, get_value, sizeof(get_value) / sizeof(get_value[0]));
 
-    temperature = getTemperature(get_value);
-    humidity = getHumidity(get_value);
+    if (*function_code == READING_REG_FUNC && *number == SIZE_HUM_AND_TEMP) {
+        temperature = getTemperature(data);
+        humidity = getHumidity(data);
+    } else {
+        throw "sensor data has an unexpected header";
+    }
 }
 
 double
 AM2320_SENSOR::getTemperature(unsigned char *block)
 {
-    uint8_t val_lsb, val_msb;
-
-    val_msb = (uint8_t)block[TEMP_HIGH_ADDR + 0x02];
-    val_lsb = (uint8_t)block[TEMP_LOW_ADDR + 0x02];
-
-    return (double)((val_msb << 8) | val_lsb) / 10.0;
+    return get2block(block, TEMP_HIGH_ADDR);
 }
 
 double
 AM2320_SENSOR::getHumidity(unsigned char *block)
 {
-    uint8_t val_lsb,val_msb;
-
-    val_msb = (uint8_t)block[HUM_HIGH_ADDR + 0x02];
-    val_lsb = (uint8_t)block[HUM_LOW_ADDR + 0x02];
-
-    return (double)((val_msb << 8) | val_lsb) / 10.0;
+    return get2block(block, HUM_HIGH_ADDR);
 }

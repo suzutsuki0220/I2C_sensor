@@ -12,8 +12,7 @@ private:
     i2c_access *i2c;
 
     void setup(void);
-    void wakeup(void);
-    void waitForAwake(void);
+    void wakeupSensor(void);
     void readRequest(void);
     double getTemperature(unsigned char *block);
     double getHumidity(unsigned char *block);

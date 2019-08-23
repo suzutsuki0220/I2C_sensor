@@ -1,0 +1,12 @@
+[Unit]
+Description=Environment sensor capture daemon
+After=local-fs.target
+
+[Service]
+PIDFile=/run/environment_daemon.pid
+ExecStart=/srv/environment/bin/environment_daemon -l /srv/environment/htdocs/log
+Type=simple
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target
